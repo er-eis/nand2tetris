@@ -16,5 +16,22 @@ CHIP PC {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+	
+	Inc16(in=registerValue, out=incRegister);
+	
+	Not(in=reset, out=notReset);
+	
+	//inc, expected sel bit result: if inc == 1 => 10
+	Xor(a=inc, b=true, out=selBit1Inc);
+	
+	//load, expected sel bit result: if load == 1 => 01
+	Xor(a=load, b=true, out=selBit2Load);
+	Or(a=load, b=selBit1Inc, out=selBit1Load);
+	
+	//resets, expected sel bit result if reset == 1 => 00
+	And(a=notReset, b=selBit1Load, out=selBit1);
+	And(a=notReset, b=selBit2Load, out=selBit2);
+	
+	Mux4Way16(a=false, b=in, c=incRegister, d=registerValue, sel[0]=selBit1, sel[1]=selBit2, out=registerIn);
+	Register(in=registerIn, load=true, out=registerValue, out=out);
 }
