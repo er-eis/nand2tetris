@@ -11,4 +11,45 @@
 // "white" in every pixel;
 // the screen should remain fully clear as long as no key is pressed.
 
-// Put your code here.
+(INPUTLOOP)
+@KBD
+D=M
+@SETBLACK
+D;JGT
+(SETWHITE)
+@color
+M=0
+(WRITELOOP)
+@i			// i = current iteration in screen writing
+M=1
+@SCREEN
+D=A
+@addr		// addr = current screen address, 16384
+M=D
+@8192
+D=A
+@length		// length = length of screen in memory, 8192
+M=D
+(LOOP)
+@i			// if i>length goto INPUTLOOP
+D=M
+@length
+D=D-M
+@INPUTLOOP
+D;JGT
+@color
+D=M
+@addr
+A=M
+M=D			// write color
+@addr
+M=M+1		// move to next address
+@i			// i++
+M=M+1
+@LOOP
+0;JMP
+(SETBLACK)
+@color
+M=-1
+@WRITELOOP
+0;JMP
