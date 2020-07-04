@@ -32,7 +32,9 @@ CHIP Memory {
 	
 	//if address[14] == 1: address[12] acts as useRAM4K, 0 == true useFirstRAM4K, 1 == useSecondRAM4K
 	Not(in=address[12], out=firstRAM4KLoadInitial);
-	And(a=address[14], b=firstRAM4KLoadInitial, out=useFirstRAM4K);
+	Not(in=address[13], out=notUseRegister);
+	And(a=address[14], b=firstRAM4KLoadInitial, out=useFirstRAM4KInitial);
+	And(a=notUseRegister, b=useFirstRAM4KInitial, out=useFirstRAM4K);
 	And(a=address[14], b=address[12], out=useSecondRAM4K);
 	
 	//address[13..14] acts as useRegister, where both bits are 1 == true
@@ -60,8 +62,8 @@ CHIP Memory {
 	
     DMux4Way(in=load, sel[0]=selBit1, sel[1]=selBit2, a=RAM1Load, b=RAM2Load, c=RAM3Load, d=registerLoad);
 	RAM16K(in=in, load=RAM1Load, address=address[0..13], out=firstRAM);
-	RAM4K(in=in, load=RAM2Load, address=address[0..11], out=secondRAM);
-	RAM4K(in=in, load=RAM3Load, address=address[0..11], out=thirdRAM);
-	Register(in=in, load=registerLoad, out=register);
-	Mux4Way16(sel[0]=selBit1, sel[1]=selBit2, a=firstRAM, b=secondRAM, c=thirdRAM, d=register, out=out);
+	Or(a=RAM2Load, b=RAM3Load, out=screenLoad);
+	Screen(in=in, load=screenLoad, address=address[0..12], out=screenOut1, out=screenOut2);
+	Keyboard(out=keyboardOut);
+	Mux4Way16(sel[0]=selBit1, sel[1]=selBit2, a=firstRAM, b=screenOut1, c=screenOut2, d=keyboardOut, out=out);
 }
