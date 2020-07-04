@@ -27,5 +27,41 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+	//address[14] acts as useRAM16K, address[14] = 0 == true, 1 == false
+	Not(in=address[14], out=useRAM16K);
+	
+	//if address[14] == 1: address[12] acts as useRAM4K, 0 == true useFirstRAM4K, 1 == useSecondRAM4K
+	Not(in=address[12], out=firstRAM4KLoadInitial);
+	And(a=address[14], b=firstRAM4KLoadInitial, out=useFirstRAM4K);
+	And(a=address[14], b=address[12], out=useSecondRAM4K);
+	
+	//address[13..14] acts as useRegister, where both bits are 1 == true
+	//this is address 110000000000000, the last accessible memory address
+	And(a=address[13], b=address[14], out=useRegister);
+	
+	
+	// sel mapping
+	// 00 = useRAM16K
+	// 01 = useFirstRAM4K
+	// 10 = useSecondRAM4K
+	// 11 = useRegister
+	//useSecondRAM4K, expected sel bit result: if useSecondRAM4K == 1 => 10
+	Xor(a=useSecondRAM4K, b=true, out=selBit1SecondRAM4K);
+	
+	//useFirstRAM4K, expected sel bit result: if useFirstRAM4K == 1 => 01
+	Xor(a=useFirstRAM4K, b=true, out=selBit2FirstRAM4K);
+	Or(a=useFirstRAM4K, b=selBit1SecondRAM4K, out=selBit1FirstRAM4K);
+	
+	//useRAM16K, expected sel bit result if useRAM16K == 1 => 00
+	Not(in=useRAM16K, out=notUseRAM16K);
+	And(a=notUseRAM16K, b=selBit1FirstRAM4K, out=selBit1);
+	And(a=notUseRAM16K, b=selBit2FirstRAM4K, out=selBit2);
+	
+	
+    DMux4Way(in=load, sel[0]=selBit1, sel[1]=selBit2, a=RAM1Load, b=RAM2Load, c=RAM3Load, d=registerLoad);
+	RAM16K(in=in, load=RAM1Load, address=address[0..13], out=firstRAM);
+	RAM4K(in=in, load=RAM2Load, address=address[0..11], out=secondRAM);
+	RAM4K(in=in, load=RAM3Load, address=address[0..11], out=thirdRAM);
+	Register(in=in, load=registerLoad, out=register);
+	Mux4Way16(sel[0]=selBit1, sel[1]=selBit2, a=firstRAM, b=secondRAM, c=thirdRAM, d=register, out=out);
 }
